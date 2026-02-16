@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Books Table</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 90%;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 6px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            cursor: pointer; /* allow clicking for sorting */
+        }
+        .pagination {
+            margin-top: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            margin: 2px;
+        }
+        #searchBar {
+            margin-bottom: 10px;
+            padding: 6px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <input type="text" id="searchBar" placeholder="Search books...">
+
+    <table id="books" border="2px">
+        <thead>
+            <tr>
+                <th data-key="title">Title</th>
+                <th data-key="isbn">ISBN</th>
+                <th data-key="pageCount">PageCount</th>
+                <th data-key="thumbnailUrl">ThumbnailURL</th>
+                <th data-key="status">Status</th>
+                <th data-key="authors">Authors</th>
+                <th data-key="categories">Categories</th>
+                <th data-key="price">Price</th>
+                <th data-key="currency">Currency</th>
+                <th data-key="discount">Discount</th>
+                <th data-key="discountUnits">DiscountUnits</th>
+            </tr>
+        </thead>
+        <tbody id="bookBody"></tbody>
+    </table>
+
+    <div class="pagination">
+        <button id="prevBtn">Previous</button>
+        <span id="pageInfo"></span>
+        <button id="nextBtn">Next</button>
+    </div>
+
+    <script src="taba.js"></script>
+    <script>
+        let currentPage = 1;
+        const rowsPerPage = 10;
+        const maxPages = 40;
+        let filteredBooks = books; // start with all books
+        let sortKey = "title"; // default sort by title
+        let sortAsc = true;
+
+        const bookBody = document.getElementById("bookBody");
+
+        function displayTable() {
+            bookBody.innerHTML = "";
+
+            // Sort the dataset before slicing
+            filteredBooks.sort((a, b) => {
+                let valA = String(a[sortKey]).toLowerCase();
+                let valB = String(b[sortKey]).toLowerCase();
+
+                if (!isNaN(valA) && !isNaN(valB)) {
+                    return sortAsc ? valA - valB : valB - valA;
+                }
+                return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            });
+
+            let start = (currentPage - 1) * rowsPerPage;
+            let end = start + rowsPerPage;
+            let paginatedBooks = filteredBooks.slice(start, end);
+
+            paginatedBooks.forEach(function(book) {
+                let ntr = document.createElement("tr");
+                let fields = [
+                    book.title, book.isbn, book.pageCount, book.thumbnailUrl,
+                    book.status, book.authors, book.categories, book.price,
+                    book.currency, book.discount, book.discountUnits
+                ];
+                fields.forEach(value => {
+                    let td = document.createElement("td");
+                    td.innerText = value;
+                    ntr.appendChild(td);
+                });
+                bookBody.appendChild(ntr);
+            });
+
+            document.getElementById("pageInfo").innerText =
+                "Page " + currentPage + " of " + Math.min(maxPages, Math.ceil(filteredBooks.length / rowsPerPage));
+
+            updateHeaderArrows();
+        }
+
+        // Update arrows on headers
+        function updateHeaderArrows() {
+            document.querySelectorAll("th").forEach(th => {
+                let key = th.getAttribute("data-key");
+                let text = th.innerText.replace(/ ▲| ▼/g, ""); // remove old arrows
+                if (key === sortKey) {
+                    th.innerText = text + (sortAsc ? " ▲" : " ▼");
+                } else {
+                    th.innerText = text;
+                }
+            });
+        }
+
+        // Pagination buttons
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            if (currentPage > 1) {
+                currentPage--;
+                displayTable();
+            }
+        });
+
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            if (currentPage < Math.min(maxPages, Math.ceil(filteredBooks.length / rowsPerPage))) {
+                currentPage++;
+                displayTable();
+            }
+        });
+
+        // Search functionality
+        document.getElementById("searchBar").addEventListener("input", (e) => {
+            const query = e.target.value.toLowerCase();
+            filteredBooks = books.filter(book =>
+                Object.values(book).some(val =>
+                    String(val).toLowerCase().includes(query)
+                )
+            );
+            currentPage = 1; // reset to first page
+            displayTable();
+        });
+
+        // Sorting when clicking headers
+        document.querySelectorAll("th").forEach(th => {
+            th.addEventListener("click", () => {
+                let key = th.getAttribute("data-key");
+                if (sortKey === key) {
+                    sortAsc = !sortAsc; // toggle ascending/descending
+                } else {
+                    sortKey = key;
+                    sortAsc = true;
+                }
+                displayTable();
+            });
+        });
+
+        // Initial load
+        displayTable();
+    </script>
+</body>
+</html>
